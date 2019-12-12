@@ -4,6 +4,7 @@ use App\Entity\Projeto;
 use App\Entity\Professor;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Tests\Compiler\J;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -37,10 +38,20 @@ class ProjetoController extends AbstractController{
      */
     public function projetosProfessor(int $idProfessor, Request $request): Response{
         $idProfessor = $request->get("idProfessor");
+
+        $repository = $this->getDoctrine()->getRepository(Professor::class);
+        $professor = $repository->find($idProfessor);
+
+        if(is_null($professor)){
+            return new JsonResponse(["erro"=>"Professor não cadastrado"], Response::HTTP_BAD_REQUEST);
+        }
+
         $repository = $this->getDoctrine()->getRepository(Projeto::class);
         $projetos = $repository->findByProfessor($idProfessor);
-        $status = is_null($projetos) ? Response::HTTP_NO_CONTENT : Response::HTTP_OK;
-        return new JsonResponse($projetos, $status);
+        if(is_null($projetos)){
+            return new JsonResponse(["erro"=>"Professor não cadastrado"], Response::HTTP_BAD_REQUEST);
+        }
+        return new JsonResponse($projetos);
     }
 
 
@@ -67,19 +78,19 @@ class ProjetoController extends AbstractController{
     }
 
     /**
-     * @Route("/projetosMudarStatus/{idProjeto}", methods={"PUT"})
+     * @Route("/projetoMudarStatus/{idProjeto}", methods={"PUT"})
      */
     public function projetosMudarStatus(string $idProjeto, Request $request): Response{
         $idProjeto = $request->get("idProjeto");
         $repository = $this->getDoctrine()->getRepository(Projeto::class);
         $projeto = $repository->find($idProjeto);
         if(is_null($projeto)){
-            return new Response("", Response::HTTP_NOT_FOUND);
+            return new JsonResponse(["erro"=>"Projeto Não Encontrado"], Response::HTTP_NOT_FOUND);
         }
         $projeto->setStatusProjeto("Finalizado");
         $this->entityManager->persist($projeto);
         $this->entityManager->flush();
-        return new JsonResponse("Deu bom", Response::HTTP_OK);
+        return new JsonResponse(["msg"=>"Status alterado com sucesso"], Response::HTTP_OK);
     }
 
 }

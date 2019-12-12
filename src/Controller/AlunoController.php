@@ -44,6 +44,10 @@ class AlunoController extends AbstractController{
         $repository = $this->getDoctrine()->getRepository(Aluno::class);
         $aluno = $repository->find($idAluno);
 
+        if(!is_null($aluno->getProjeto())){
+            return new Response("Aluno já estar em um projeto", Response::HTTP_BAD_REQUEST);
+        }
+
 
         if(is_null($aluno)){
             return new Response("Aluno não Encontrado", Response::HTTP_NOT_FOUND);
@@ -56,7 +60,7 @@ class AlunoController extends AbstractController{
         $this->entityManager->persist($aluno);
         $this->entityManager->flush();
         // return new JsonResponse($aluno);
-        return new JsonResponse("Deu bom", Response::HTTP_OK);
+        return new JsonResponse(['msg'=>"Aluno vinculado ao projeto"], Response::HTTP_OK);
     }
 
     /**
@@ -76,8 +80,12 @@ class AlunoController extends AbstractController{
         $id = $request->get("id");
         $repository = $this->getDoctrine()->getRepository(Aluno::class);
         $aluno = $repository->find($id);
+
         if(is_null($aluno)){
-            return new Response("", Response::HTTP_NOT_FOUND);
+            return new JsonResponse(["erro"=>"Aluno não encontrado"], Response::HTTP_NOT_FOUND);
+        }
+        if(is_null($aluno->getProjeto())){
+            return new JsonResponse(["erro"=>"Aluno não estar em nenhum projeto"], Response::HTTP_NOT_FOUND);
         }
         $aluno->setProjeto(null);
         $this->entityManager->persist($aluno);
